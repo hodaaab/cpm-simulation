@@ -17,7 +17,7 @@ L = 1;                                      % Full response / Partial response
 pulse_name = 'rectangular';                 % Pulse Shaping Function ('rectangular') NOTE: GMSK IS CONVOLUTION OF GAUSSIAN WITH REC FREQ RESP
 window_length = 6;                          % Viterbi window length
 % fc = 150e6;
-fc = 0;
+fc = 0e6;
 dfc = 10e3;
 phi0 = 0*pi/180;
 baseband = false;
@@ -79,12 +79,12 @@ for i = 1:length(snr_db)
     rx_smpl = tx_smpl_noise;
 
     % Coarse Carrier Synchronization
-    df = carrier_frequency_estimator(rx_smpl,fs,fs/4000);
-    rx_smpl = exp(-1i*2*pi*df/fs*n.').*rx_smpl;
+    df_est = carrier_frequency_estimator(rx_smpl,fs,fs/4000);
+    rx_smpl = exp(-1i*2*pi*df_est/fs*n.').*rx_smpl;
     % Fine Carrier Synchronization
-    [rx_smpl,phaseEstimate] = carrier_synchronizer(rx_smpl,sps);
+%     [rx_smpl,phaseEstimate] = carrier_synchronizer(rx_smpl,sps);
     
-    rec_sym(i,:) = subopt_viterbi(rx_smpl, window_length, sps);
+    rec_sym(i,:) = synch_loop(rx_smpl, window_length, sps);
     p_err_bit(i) = sum(rec_sym(i,:) ~= mod_sym(1:length(mod_sym)-window_length))/length(rec_sym);
 end
 %% BER
