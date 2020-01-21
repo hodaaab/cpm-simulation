@@ -5,20 +5,20 @@ clc
 % rng(7)
 %% Modulation Parameters
 % fs = 10e9;
-fs = 100e3;                                   % Baseband Sampling Rate
+fs = 100e3;                                 % Baseband Sampling Rate
 ts = 1/fs;                                  % Baseband Sampling Time
 sps = 64;                                   % Sample Per Symbol
 Ts = sps*ts;                                % Symbol Time
 k = 1;                                      % Bit Per Symbol
 M = 2^k;                                    % Modulation Order
-pkt_size = 1e3;                             % Number of Symbols in Packet
+pkt_size = 1e4;                             % Number of Symbols in Packet
 h = 1/2;                                    % Modulation Index h
 L = 1;                                      % Full response / Partial response
 pulse_name = 'rectangular';                 % Pulse Shaping Function ('rectangular') NOTE: GMSK IS CONVOLUTION OF GAUSSIAN WITH REC FREQ RESP
 window_length = 6;                          % Viterbi window length
 % fc = 150e6;
 fc = 0e6;
-dfc = 10e3;
+dfc = 0e3;
 phi0 = 0*pi/180;
 baseband = false;
 %% Channel Parameters
@@ -61,8 +61,6 @@ else
     tx_smpl = (exp(1i*phase'+1i*2*pi*(fc+dfc)/fs*n.'+1i*phi0)); % carrier modulation
 end
 tx_smpl = tx_smpl./sqrt(sps/2);
-figure
-plot(real(tx_smpl))
 
 %% Channel
 % tx_smpl_delayed = [zeros(1, chnl_delay_in_smpl), tx_smpl];
@@ -78,22 +76,22 @@ for i = 1:length(snr_db)
     tx_smpl_noise = tx_smpl + noise_smpl.';
     rx_smpl = tx_smpl_noise;
 
-    % Coarse Carrier Synchronization
-    df_est = carrier_frequency_estimator(rx_smpl,fs,fs/4000);
-    rx_smpl = exp(-1i*2*pi*df_est/fs*n.').*rx_smpl;
-    % Fine Carrier Synchronization
+%     Coarse Carrier Synchronization
+%     df_est = carrier_frequency_estimator(rx_smpl,fs,fs/4000);
+%     rx_smpl = exp(-1i*2*pi*df_est/fs*n.').*rx_smpl;
+%     Fine Carrier Synchronization
 %     [rx_smpl,phaseEstimate] = carrier_synchronizer(rx_smpl,sps);
     
     rec_sym(i,:) = synch_loop(rx_smpl, window_length, sps);
     p_err_bit(i) = sum(rec_sym(i,:) ~= mod_sym(1:length(mod_sym)-window_length))/length(rec_sym);
 end
 %% BER
-figure
-semilogy(snr_db, p_err_bit,'-xr')
-grid on
-title("{BER Performance of binary CPM}")
-xlabel('{E_b}/\eta in dB');
-ylabel('Bit Error Rate')
+% figure
+% semilogy(snr_db, p_err_bit,'-xr')
+% grid on
+% title("{BER Performance of binary CPM}")
+% xlabel('{E_b}/\eta in dB');
+% ylabel('Bit Error Rate')
 
 % %% Symbol Synchronization
 % % First possible data configuration
@@ -114,18 +112,4 @@ ylabel('Bit Error Rate')
 %     subplot(2,2,4)
 %     scatterplot_MT(rxSym2(ConvergenceDelay:end))
 %     title('After symbol Synchronization II')
-% end
-
-%% Matlab CPM Modulator
-% hMod = comm.CPMModulator(2, 'BitInput', false, 'SamplesPerSymbol', sps);
-% hAWGN = comm.AWGNChannel('NoiseMethod', 'Signal to noise ratio (SNR)','SNR',snr_min:snr_step:snr_max);
-% hDemod = comm.CPMDemodulator(2, 'BitOutput', false, 'SamplesPerSymbol', sps, 'TracebackDepth', window_length);
-% % Create an error rate calculator, account for the delay caused by the Viterbi algorithm.
-% delay = log2(hDemod.ModulationOrder)*hDemod.TracebackDepth;
-% hError = comm.ErrorRate('ReceiveDelay', delay);
-% for counter = 1:pkt_size
-%     modSignal = step(hMod, mod_sym);
-%     noisySignal = step(hAWGN, modSignal);
-%     receivedData = step(hDemod, noisySignal);
-%     errorStats = step(hError, mod_sym, receivedData);
 % end
