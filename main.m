@@ -2,25 +2,23 @@
 close all
 clear
 clc
-rng(7)
 %% Modulation Parameters
-% fs = 10e9;
 fs = 100e3;                                 % Baseband Sampling Rate
 ts = 1/fs;                                  % Baseband Sampling Time
 sps = 64;                                   % Sample Per Symbol
 Ts = sps*ts;                                % Symbol Time
 k = 1;                                      % Bit Per Symbol
 M = 2^k;                                    % Modulation Order
-pkt_size = 1e4;                             % Number of Symbols in Packet
+pkt_size = 1e5;                             % Number of Symbols in Packet
 h = 1/2;                                    % Modulation Index h
 L = 1;                                      % Full response / Partial response
 pulse_name = 'rectangular';                 % Pulse Shaping Function ('rectangular') NOTE: GMSK IS CONVOLUTION OF GAUSSIAN WITH REC FREQ RESP
-window_length = 6;                          % Viterbi window length
-% fc = 150e6;
+viterbi_delay = 6;                          % Viterbi traceback length measured in symbols
 fc = 0e6;
 dfc = 0e2;
-phi0 = 0*pi/180;
+phi0 = 30*pi/180;
 baseband = false;
+
 %% Channel Parameters
 chnl_delay_in_smpl = round(0 * sps);        % Channel Delay in Sample
 chnl_phase_offset = 0*pi/180;               % Channel Phase Offset
@@ -66,7 +64,7 @@ tx_smpl = tx_smpl./sqrt(sps/2);
 % tx_smpl_delayed = [zeros(1, chnl_delay_in_smpl), tx_smpl];
 % tx_smpl = tx_smpl_delayed * exp(1i*chnl_phase_offset);
 
-rec_sym = zeros(length(snr_db),pkt_size-window_length);
+rec_sym = zeros(length(snr_db),pkt_size-viterbi_delay);
 for i = 1:length(snr_db)
     Es_avg = 1;
     Eb = Es_avg/k;
@@ -75,13 +73,13 @@ for i = 1:length(snr_db)
     noise_smpl = sqrt(var_noise.'/2)*(randn(1,length(tx_smpl))+1i*randn(1,length(tx_smpl)));
     tx_smpl_noise = tx_smpl + noise_smpl.';
     rx_smpl = tx_smpl_noise;   
-    rec_sym(i,:) = cpm_receiver(rx_smpl, window_length, sps, fs);
-    p_err_bit(i) = sum(rec_sym(i,:) ~= mod_sym(1:length(mod_sym)-window_length))/length(rec_sym);
+    rec_sym(i,:) = cpm_receiver(rx_smpl, viterbi_delay, sps, fs);
+    p_err_bit(i) = sum(rec_sym(i,:) ~= mod_sym(1:length(mod_sym)-viterbi_delay))/length(rec_sym);
 end
-%% BER
-% figure
-% semilogy(snr_db, p_err_bit,'-xr')
-% grid on
-% title("{BER Performance of binary CPM}")
-% xlabel('{E_b}/\eta in dB');
-% ylabel('Bit Error Rate')
+%% BER Plot
+figure
+semilogy(snr_db, p_err_bit,'-xr')
+grid on
+title("{BER Performance of binary CPM}")
+xlabel('{E_b}/\eta in dB');
+ylabel('Bit Error Rate')
