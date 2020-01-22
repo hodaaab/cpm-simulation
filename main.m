@@ -2,7 +2,7 @@
 close all
 clear
 clc
-% rng(7)
+rng(7)
 %% Modulation Parameters
 % fs = 10e9;
 fs = 100e3;                                 % Baseband Sampling Rate
@@ -18,7 +18,7 @@ pulse_name = 'rectangular';                 % Pulse Shaping Function ('rectangul
 window_length = 6;                          % Viterbi window length
 % fc = 150e6;
 fc = 0e6;
-dfc = 0e3;
+dfc = 0e2;
 phi0 = 0*pi/180;
 baseband = false;
 %% Channel Parameters
@@ -74,15 +74,8 @@ for i = 1:length(snr_db)
     var_noise = Eb/snr;
     noise_smpl = sqrt(var_noise.'/2)*(randn(1,length(tx_smpl))+1i*randn(1,length(tx_smpl)));
     tx_smpl_noise = tx_smpl + noise_smpl.';
-    rx_smpl = tx_smpl_noise;
-
-%     Coarse Carrier Synchronization
-%     df_est = carrier_frequency_estimator(rx_smpl,fs,fs/4000);
-%     rx_smpl = exp(-1i*2*pi*df_est/fs*n.').*rx_smpl;
-%     Fine Carrier Synchronization
-%     [rx_smpl,phaseEstimate] = carrier_synchronizer(rx_smpl,sps);
-    
-    rec_sym(i,:) = synch_loop(rx_smpl, window_length, sps);
+    rx_smpl = tx_smpl_noise;   
+    rec_sym(i,:) = cpm_receiver(rx_smpl, window_length, sps, fs);
     p_err_bit(i) = sum(rec_sym(i,:) ~= mod_sym(1:length(mod_sym)-window_length))/length(rec_sym);
 end
 %% BER
@@ -92,24 +85,3 @@ end
 % title("{BER Performance of binary CPM}")
 % xlabel('{E_b}/\eta in dB');
 % ylabel('Bit Error Rate')
-
-% %% Symbol Synchronization
-% % First possible data configuration
-% rxSymFinal1 = real(rxSymFinal(1:end-2))+1i*imag(rxSymFinal(1+2:end));
-% rxSym1 = rxSymFinal1(1:2:end);
-% rxSym1 = ZeroCrossingSymSync_MT(rxSym1,2);
-% if ShowFigures
-%     subplot(2,2,3)
-%     scatterplot_MT(rxSym1(ConvergenceDelay:end))
-%     title('After symbol Synchronization I')
-% end
-% 
-% % Second possible data configuration
-% rxSymFinal2 = 1i*imag(rxSymFinal(1:end-2))+real(rxSymFinal(1+2:end));
-% rxSym2 = rxSymFinal2(1:2:end);
-% rxSym2 = ZeroCrossingSymSync_MT(rxSym2,2);
-% if ShowFigures
-%     subplot(2,2,4)
-%     scatterplot_MT(rxSym2(ConvergenceDelay:end))
-%     title('After symbol Synchronization II')
-% end

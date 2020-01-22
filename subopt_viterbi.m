@@ -1,11 +1,4 @@
-function [rec_sym, distance] = subopt_viterbi(window_length, metric, distance, p)
-if p == 1
-    for i = 2:8
-        distance(i,1) = -Inf;
-    end
-else
-distance(:,1) = distance(:,2);
-end
+function [rec_sym, distance] = subopt_viterbi(window_length, metric, distance)
 for i = 1:window_length
     distance(1,i+1) = max(distance(7,i)+metric(13,i),distance(8,i)+metric(15,i));   %Minimum distance to reach state 1 : (0,1)
     distance(2,i+1) = max(distance(3,i)+metric(6,i),distance(4,i)+metric(8,i));     %Minimum distance to reach state 2 : (0,-1)
