@@ -1,17 +1,17 @@
-function phase_est = carrier_synchronizer(phase_error, sps, PLL)
+function timing_est = timing_synchronizer(timing_error, sps, PLL)
 
-% This function compensates for frequency offsets and phase rotations.
-% The function uses a closed-loop PLL approach to reduce  frequency offset and phase rotation.
-% The phase error is generated from a hard decision of the received signal.
+% This function compensates for timing offsets.
+% The function uses a closed-loop PLL approach to reduce timing offset.
+% The timing error is generated from a hard decision of the received signal.
 %
 % References:
 %   [1] "Software-defined radio for engineers", pg. 227
 %
 % Outputs:
-%   phaseEstimate: Estimation of the phase errors in radians
+%   timing_est: Estimation of the timing error in samples
 
 %% Main Synchronization Parameters
-DampingFactor = 1;
+DampingFactor = 5;
 NormalizedLoopBandwidth = 0.09;
 
 %% Calculate coefficients for FFC
@@ -29,12 +29,11 @@ ProportionalGain = (4*DampingFactor*theta/delta)/...
 IntegratorGain = (4/sps*theta*theta/delta)/...
     (PhaseErrorDetectorGain*PhaseRecoveryGain);
 % PED
-phErr = phase_error;
+tErr = timing_error;
 % Loop Filter
-loopFiltOut = PLL.LoopFilter(phErr*IntegratorGain);
+loopFiltOut = PLL.LoopFilter(tErr*IntegratorGain);
 
 % Direct Digital Synthesizer
-DDSOut = PLL.Integrator(phErr*ProportionalGain + loopFiltOut);
-phase_est = DigitalSynthesizerGain * DDSOut;
-
+DDSOut = PLL.Integrator(tErr*ProportionalGain + loopFiltOut);
+timing_est = DigitalSynthesizerGain * DDSOut * sps/pi;
 end

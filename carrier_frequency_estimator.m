@@ -35,9 +35,9 @@ if mod(L/Nfft,1)~=0
 end
 
 %% Plot
-figure()
-f_x = (-Nfft/2:Nfft/2-1)*(fs/Nfft);
-semilogy(f_x, (fftshift(R)))
+% figure()
+% f_x = (-Nfft/2:Nfft/2-1)*(fs/Nfft);
+% semilogy(f_x, (fftshift(R)))
 
 %% Find Maximum Frequency Index
 [~, maxIdx] = max(fftshift(R));
